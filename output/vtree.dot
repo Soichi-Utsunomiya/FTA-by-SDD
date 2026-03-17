@@ -3,21 +3,17 @@ digraph vtree {
 
 overlap=false
 
-n8 [label="8",fontname="Times",shape="plaintext",fontsize=12,fixedsize=true,width=.2,height=.18]; 
-n0 [label="A",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
-n7 [label="7",fontname="Times",shape="plaintext",fontsize=12,fixedsize=true,width=.2,height=.18]; 
-n1 [label="C",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
 n6 [label="6",fontname="Times",shape="plaintext",fontsize=12,fixedsize=true,width=.2,height=.18]; 
 n4 [label="4",fontname="Times",shape="plaintext",fontsize=12,fixedsize=true,width=.2,height=.18]; 
-n2 [label="B",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
-n3 [label="E",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
+n2 [label="2",fontname="Times",shape="plaintext",fontsize=12,fixedsize=true,width=.2,height=.18]; 
+n0 [label="A",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
+n1 [label="B",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
+n3 [label="C",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
 n5 [label="D",fontname="Times-Italic",fontsize=14,shape="plaintext",fixedsize=true,width=.25,height=.25]; 
-n8->n0 [headclip=true,arrowhead=none,headlabel="0",labelfontname="Times",labelfontsize=10];
-n8->n7 [arrowhead=none];
-n7->n1 [headclip=true,arrowhead=none,headlabel="1",labelfontname="Times",labelfontsize=10];
-n7->n6 [arrowhead=none];
 n6->n4 [arrowhead=none];
-n4->n2 [headclip=true,arrowhead=none,headlabel="2",labelfontname="Times",labelfontsize=10];
+n4->n2 [arrowhead=none];
+n2->n0 [headclip=true,arrowhead=none,headlabel="0",labelfontname="Times",labelfontsize=10];
+n2->n1 [headclip=true,arrowhead=none,headlabel="1",labelfontname="Times",labelfontsize=10];
 n4->n3 [headclip=true,arrowhead=none,headlabel="3",labelfontname="Times",labelfontsize=10];
 n6->n5 [headclip=true,arrowhead=none,headlabel="5",labelfontname="Times",labelfontsize=10];
 

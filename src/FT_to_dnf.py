@@ -2,9 +2,10 @@ import xml.etree.ElementTree as ET
 from pyeda.inter import *
 
 prob_map = {} 
+gate_child_map = {}
+gate_grandchild_map = {}
 
 def parse_event(event_elem):
-    """<event>要素を再帰的に解析して論理式文字列を返す"""
     gate = event_elem.get("gate")
     event_id = event_elem.get("id")
     value = event_elem.get("value")
@@ -18,7 +19,19 @@ def parse_event(event_elem):
     if gate is None:
         return event_id
 
-    subevents = [parse_event(child) for child in event_elem.findall("event")]
+    subevents = []
+    child_basic_event = set([])
+    gate_grandchild_map[event_id] = set([])
+    for child in event_elem.findall("event"):
+        child_event_id = child.get("id")
+        child_event = parse_event(child)
+        subevents.append(child_event)
+        if child_event[0] != '(':
+            child_basic_event.add(child_event_id)
+        else:
+            gate_grandchild_map[event_id] = gate_grandchild_map[event_id].symmetric_difference(gate_child_map[child_event_id])
+
+    gate_child_map[event_id] = child_basic_event
 
     if gate.upper() == "AND":
         return "(" + " & ".join(subevents) + ")"

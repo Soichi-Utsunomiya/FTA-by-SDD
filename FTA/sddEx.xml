@@ -6,11 +6,11 @@
             <event id = "b" value = "0.01"/>
     </event>
     <event id = "G2" gate = "AND">
-            <event id = "x" value = "0.01"/>
+            <event id = "b" value = "0.01"/>
             <event id = "c" value = "0.5"/>
     </event>
     <event id = "G3" gate = "AND">
-            <event id = "x" value = "0.5"/>
+            <event id = "c" value = "0.5"/>
             <event id = "d" value = "1.00E-03"/>
     </event>
   </event>
