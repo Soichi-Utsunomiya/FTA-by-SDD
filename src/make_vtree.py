@@ -1,6 +1,9 @@
 import xml.etree.ElementTree as ET
+from FT_to_dnf import prob_map
+import os
 
 var_map = {}
+name_prob_map = []
 visited_var = []
 custum_vtree = []
 stack = []
@@ -55,13 +58,14 @@ def FT_vtree(event_elem):
                 return 0
     return 1
 
-def make_vtree(xml_path, pyeda_expr):
-    global var_map, visited_var, custum_vtree
+def make_vtree(xml_path, pyeda_expr, vtree_file):
+    global var_map, visited_var, custum_vtree, name_prob_map
     support_vars = sorted([str(v) for v in pyeda_expr.support])
 
     i = 1
     for var in support_vars:
         var_map[var] = i
+        name_prob_map.append(prob_map[var])
         visited_var.append(0)
         i += 1
     
@@ -74,6 +78,6 @@ def make_vtree(xml_path, pyeda_expr):
     top.append("vtree " + str(event_count))
     custum_vtree = top + custum_vtree
 
-    with open("input/custom.vtree", "w") as out:
+    with open(vtree_file, "w") as out:
         for row in custum_vtree:
             print(row, file = out)

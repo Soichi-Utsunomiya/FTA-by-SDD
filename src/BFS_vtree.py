@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
-from FT_to_dnf import gate_child_map, gate_grandchild_map
+from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
 
 var_map = {}
+name_prob_map = []
 visited_var = []
 custum_vtree = []
 stack = []
@@ -65,10 +66,10 @@ def BFS(event_elem):
     if gate:
         print(gate_grandchild_map[id])
         child_events = event_elem.findall("event")
-        score_gate = {}
+        #score_gate = {}
         for child_event in child_events:
             child_event_id = child_event.get("id")
-            print(gate_child_map[child_event_id])
+            #print(gate_child_map[child_event_id])
             if child_event_id in gate_child_map:
                 #core_gate[child_event_id] = gate_grandchild_map[id] & gate_child_map[child_event_id]
                 print(len(gate_grandchild_map[id] & gate_child_map[child_event_id]))
@@ -77,13 +78,14 @@ def BFS(event_elem):
     else:
         return id
 
-def BFS_vtree(xml_path, pyeda_expr):
-    global var_map, visited_var, custum_vtree, event_list
+def BFS_vtree(xml_path, pyeda_expr, vtree_file):
+    global var_map, visited_var, custum_vtree, event_list, name_prob_map
     support_vars = sorted([str(v) for v in pyeda_expr.support])
 
     i = 1
     for var in support_vars:
         var_map[var] = i
+        name_prob_map.append(prob_map[var])
         visited_var.append(0)
         i += 1
     
@@ -98,6 +100,6 @@ def BFS_vtree(xml_path, pyeda_expr):
     top.append("vtree " + str(event_count))
     custum_vtree = top + custum_vtree
 
-    with open("input/custom.vtree", "w") as out:
+    with open(vtree_file, "w") as out:
         for row in custum_vtree:
             print(row, file = out)
