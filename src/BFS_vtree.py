@@ -42,7 +42,7 @@ def FT_vtree(event_elem):
             if valid_event != 0 and valid_event % 2 == 0:
                 synthesis()
                 valid_event -= 1
-        if valid_event >= 1:
+        if valid_event > 1:
             for i in range(valid_event-1):
                 synthesis()
             if alone:
@@ -69,9 +69,9 @@ def BFS(event_elem):
         #score_gate = {}
         for child_event in child_events:
             child_event_id = child_event.get("id")
-            #print(gate_child_map[child_event_id])
             if child_event_id in gate_child_map:
                 #core_gate[child_event_id] = gate_grandchild_map[id] & gate_child_map[child_event_id]
+                print(gate_child_map[child_event_id])
                 print(len(gate_grandchild_map[id] & gate_child_map[child_event_id]))
         for child_event in child_events:
             event_list.append(child_event)
@@ -79,7 +79,15 @@ def BFS(event_elem):
         return id
 
 def BFS_vtree(xml_path, pyeda_expr, vtree_file):
-    global var_map, visited_var, custum_vtree, event_list, name_prob_map
+    global var_map, visited_var, custum_vtree, event_list, name_prob_map, event_count, stack, alone
+    alone = False
+    event_count = 0
+    var_map.clear()
+    visited_var.clear()
+    custum_vtree.clear()
+    event_list.clear()
+    name_prob_map.clear()
+    stack.clear()
     support_vars = sorted([str(v) for v in pyeda_expr.support])
 
     i = 1
@@ -91,10 +99,12 @@ def BFS_vtree(xml_path, pyeda_expr, vtree_file):
     
     tree = ET.parse(xml_path)
     root = tree.getroot()
-    event_list.append(root)
+    FT_vtree(root)
+
+    """event_list.append(root)
 
     for event in event_list:
-        BFS(event)
+        BFS(event)"""
 
     top = []
     top.append("vtree " + str(event_count))

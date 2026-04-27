@@ -2,7 +2,7 @@ from FT_to_dnf import xml_to_formula, formula_to_dnf, prob_map, gate_child_map, 
 from dnf_to_sdd import run_sdd_from_pyeda_obj
 from draw import draw
 from explore import explore
-from make_vtree import make_vtree
+#from make_vtree import make_vtree
 from BFS_vtree import BFS_vtree
 import os
 import sys
@@ -22,6 +22,10 @@ def main():
     for xml_file in xml_files:
         file_name = xml_file.stem
         print(file_name)
+
+        prob_map.clear()
+        gate_child_map.clear()
+        gate_grandchild_map.clear()
     
         # 1. XML -> 論理式文字列
         formula_str = xml_to_formula(xml_file)
@@ -51,7 +55,7 @@ def main():
         BFS_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")
 
         # 3. PyEDAオブジェクト -> SDD
-        sdd_node, mgr, var_map = run_sdd_from_pyeda_obj(dnf_expr, output_folder + file_name)
+        sdd_node, mgr, var_map = run_sdd_from_pyeda_obj(dnf_expr, output_folder + file_name, vtree_folder + file_name + ".vtree")
 
         probability = explore(sdd_node)
         print(probability)

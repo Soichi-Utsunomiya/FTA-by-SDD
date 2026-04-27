@@ -14,7 +14,7 @@ def dnf_to_str(node):
     else:
         raise ValueError(f"Unknown node type: {type(node)}")
 
-def run_sdd_from_pyeda_obj(pyeda_expr, output_file):
+def run_sdd_from_pyeda_obj(pyeda_expr, output_file, vtree_file):
     
     print(f"\nConverting PyEDA object to SDD... ")
 
@@ -32,10 +32,9 @@ def run_sdd_from_pyeda_obj(pyeda_expr, output_file):
     # 2. SDDマネージャーの初期化
     var_count = len(support_vars)
     var_order = list(range(1, var_count + 1))
-    #var_order=[2,3,1,4]
 
-    vtree = Vtree(var_count=var_count, var_order=var_order, vtree_type="balanced")
-    #vtree = Vtree.from_file("input/custom.vtree".encode())
+    #vtree = Vtree(var_count=var_count, var_order=var_order, vtree_type="balanced")
+    vtree = Vtree.from_file(vtree_file.encode())
     sdd_manager = SddManager.from_vtree(vtree)
     #sdd_manager.minimize()
 

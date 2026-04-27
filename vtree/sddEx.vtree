@@ -1,2 +1,8 @@
-vtree 0
-vtree 0
+vtree 7
+L 0 1
+L 1 2
+I 2 0 1
+L 3 3
+I 4 2 3
+L 5 4
+I 6 4 5
