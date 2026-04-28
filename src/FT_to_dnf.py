@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 from pyeda.inter import *
 
 prob_map = {}
-gate_level = {}
+#gate_level = {}
 gate_child_map = {}
 gate_grandchild_map = {}
 
@@ -43,8 +43,10 @@ def parse_event(event_elem):
 
 def xml_to_formula(xml_path: str) -> str:
     """XMLファイルを解析して論理式（文字列）を生成"""
-    global prob_map
+    global prob_map, gate_child_map, gate_grandchild_map
     prob_map.clear()
+    gate_child_map.clear()
+    gate_grandchild_map.clear()
 
     tree = ET.parse(xml_path)
     root = tree.getroot()

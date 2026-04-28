@@ -16,7 +16,7 @@ def dnf_to_str(node):
 
 def run_sdd_from_pyeda_obj(pyeda_expr, output_file, vtree_file):
     
-    print(f"\nConverting PyEDA object to SDD... ")
+    print(f"Converting PyEDA object to SDD... ")
 
     # 1. 変数集合の取得
     support_vars = sorted([str(v) for v in pyeda_expr.support])
@@ -42,10 +42,10 @@ def run_sdd_from_pyeda_obj(pyeda_expr, output_file, vtree_file):
     name_to_sdd_var = {name: sdd_manager.vars[i+1] for i, name in enumerate(support_vars)}
 
     dnf_str = dnf_to_str(pyeda_expr)
-    print(dnf_str)
+    #print(dnf_str)
 
     # 変換実行
-    print(name_to_sdd_var)
+    #print(name_to_sdd_var)
     sdd_node = eval(dnf_str, {}, name_to_sdd_var)
 
     with open(output_file + "_sdd.dot", "w") as out:

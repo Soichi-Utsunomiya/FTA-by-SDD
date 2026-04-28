@@ -39,9 +39,10 @@ def FT_vtree(event_elem):
         valid_event = 0
         for child_event in child_events:
             valid_event += FT_vtree(child_event)
-            if valid_event != 0 and valid_event % 2 == 0:
+            #print(stack)
+            """if valid_event != 0 and valid_event % 2 == 0:
                 synthesis()
-                valid_event -= 1
+                valid_event -= 1"""
         if valid_event > 1:
             for i in range(valid_event-1):
                 synthesis()
@@ -55,7 +56,7 @@ def FT_vtree(event_elem):
             else:
                 alone = True
                 return 0
-    return 1
+        return 1
 
 def BFS(event_elem):
     global event_list

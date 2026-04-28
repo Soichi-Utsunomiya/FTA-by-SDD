@@ -4,9 +4,7 @@ from BFS_vtree import name_prob_map
 from decimal import *
 
 def explore(current_node):
-    print(current_node.elements())
     probability = Decimal(0)
-    print(name_prob_map)
     for node in current_node.elements():
         p, s = node
         if p.is_decision():
