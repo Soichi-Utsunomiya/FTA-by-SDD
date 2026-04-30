@@ -33,7 +33,7 @@ def run_sdd_from_pyeda_obj(pyeda_expr, output_file, vtree_file):
     var_count = len(support_vars)
     var_order = list(range(1, var_count + 1))
 
-    #vtree = Vtree(var_count=var_count, var_order=var_order, vtree_type="balanced")
+    #vtree = Vtree(var_count=var_count, var_order=var_order, vtree_type="right")
     vtree = Vtree.from_file(vtree_file.encode())
     sdd_manager = SddManager.from_vtree(vtree)
     #sdd_manager.minimize()

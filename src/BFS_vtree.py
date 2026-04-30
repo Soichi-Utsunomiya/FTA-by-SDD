@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
+import math
 
 var_map = {}
 name_prob_map = []
@@ -19,7 +20,7 @@ def synthesis():
     event_count += 1
 
 def FT_vtree(event_elem):
-    global event_count, stack, custum_vtree, alone, event_list
+    global event_count, stack, custum_vtree, alone, event_list, visited_var, var_map
     gate = event_elem.get("gate")
     event_id = event_elem.get("id")
 
@@ -37,26 +38,44 @@ def FT_vtree(event_elem):
 
     if gate:
         valid_event = 0
+        common_event = 0
+        gate_child_events = []
         for child_event in child_events:
-            valid_event += FT_vtree(child_event)
-            #print(stack)
-            """if valid_event != 0 and valid_event % 2 == 0:
-                synthesis()
-                valid_event -= 1"""
-        if valid_event > 1:
-            for i in range(valid_event-1):
-                synthesis()
-            if alone:
-                synthesis()
-                alone = False
-        if valid_event == 1:
-            if alone:
-                synthesis()
-                alone = False
+            child_gate = child_event.get("gate")
+
+            if child_gate is None:
+                event = FT_vtree(child_event)
+                common_event += event
+                valid_event += event
+                if common_event == 2:
+                    synthesis()
+                    common_event = 0
+                    valid_event -= 1
+                    if valid_event == 2:
+                        synthesis()
+                        valid_event -= 1
             else:
-                alone = True
-                return 0
-        return 1
+                gate_child_events.append(child_event)
+                
+        gate_event = valid_event
+        for child_event in gate_child_events:
+            event = FT_vtree(child_event)
+            gate_event += event
+            valid_event += event
+            if gate_event >= 2:
+                synthesis()
+                gate_event = 0
+                valid_event -= 1
+                if valid_event == 2:
+                    synthesis()
+                    valid_event -= 1
+        if valid_event > 1:
+            synthesis()
+            return 1
+        elif valid_event == 1:
+            return 1
+        else:
+            return 0
 
 def BFS(event_elem):
     global event_list
