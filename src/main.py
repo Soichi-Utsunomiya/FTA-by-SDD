@@ -22,12 +22,12 @@ def dir_clear(get_dir):
 
 def main():
     if len(sys.argv)>1:
-        xml_folder = sys.argv[1]
+        xml_file = Path(sys.argv[1])
         path = os.getcwd()
         vtree_folder = path + "/vtree"
         output_folder = path + "/output"
     else:
-        xml_folder = "FTA"
+        xml_file = "FTA/sample.xml"
         vtree_folder = "vtree"
         output_folder = "output"
 
@@ -36,54 +36,52 @@ def main():
     vtree_folder += '/'
     output_folder += '/'
 
-    xml_files = sorted(Path(xml_folder).glob(f"*.xml"))
-    for xml_file in xml_files:
-        file_name = xml_file.stem
-        print(file_name)
+    file_name = xml_file.stem
+    print(file_name)
 
-        prob_map.clear()
-        gate_child_map.clear()
-        gate_grandchild_map.clear()
+    prob_map.clear()
+    gate_child_map.clear()
+    gate_grandchild_map.clear()
     
-        start_time = time.perf_counter()
+    start_time = time.perf_counter()
 
-        # 1. XML -> 論理式文字列
-        formula_str = xml_to_formula(xml_file)
-        print("--- Expression ---")
-        print(formula_str)
+    # 1. XML -> 論理式文字列
+    formula_str = xml_to_formula(xml_file)
+    print("--- Expression ---")
+    print(formula_str)
     
-        # 2. 文字列 -> PyEDAオブジェクト (DNF化)
-        dnf_expr = formula_to_dnf(formula_str)
+    # 2. 文字列 -> PyEDAオブジェクト (DNF化)
+    dnf_expr = formula_to_dnf(formula_str)
     
-        """print("\n--- DNF Expression (PyEDA) ---")
+    """print("\n--- DNF Expression (PyEDA) ---")
         print(dnf_expr) """
 
-        """print("\n--- Probabilities ---")
-        for k, v in prob_map.items():
-            print(f"{k}: {v}")
+    """print("\n--- Probabilities ---")
+    for k, v in prob_map.items():
+        print(f"{k}: {v}")
 
-        print("\n--- Child map ---")
-        for k, v in gate_child_map.items():
-            print(f"{k}: {v}")
+    print("\n--- Child map ---")
+    for k, v in gate_child_map.items():
+        print(f"{k}: {v}")
 
-        print("\n--- Grandchild map ---")
-        for k, v in gate_grandchild_map.items():
-            print(f"{k}: {v}")
+    print("\n--- Grandchild map ---")
+    for k, v in gate_grandchild_map.items():
+        print(f"{k}: {v}")
 
-        print("\n--- Making vtree ---")"""
-        #make_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")
-        BFS_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")
+    print("\n--- Making vtree ---")"""
+    #make_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")
+    BFS_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")
 
-        # 3. PyEDAオブジェクト -> SDD
-        sdd_node, mgr, var_map = run_sdd_from_pyeda_obj(dnf_expr, output_folder + file_name, vtree_folder + file_name + ".vtree")
+    # 3. PyEDAオブジェクト -> SDD
+    sdd_node, mgr, var_map = run_sdd_from_pyeda_obj(dnf_expr, output_folder + file_name, vtree_folder + file_name + ".vtree")
 
-        probability = explore(sdd_node)
-        print(f"Probability:{probability}")
+    probability = explore(sdd_node)
+    print(f"Probability:{probability}")
 
-        print(f"Nodes:{sdd_node.size()}")
+    print(f"Nodes:{sdd_node.size()}")
 
-        end_time = time.perf_counter()
-        print(f"Time:{(end_time-start_time)*1000}ms\n")
+    end_time = time.perf_counter()
+    print(f"Time:{(end_time-start_time)*1000}ms\n")
     
     mode = 1
     if mode == 1:
