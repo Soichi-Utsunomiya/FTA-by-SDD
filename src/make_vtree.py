@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
-from FT_to_dnf import prob_map
-import os
+from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
+import math
 
 var_map = {}
 name_prob_map = []
@@ -9,6 +9,7 @@ custum_vtree = []
 stack = []
 alone = False
 event_count = 0
+event_list = []
 
 def synthesis():
     global custum_vtree, stack, event_count
@@ -19,7 +20,7 @@ def synthesis():
     event_count += 1
 
 def FT_vtree(event_elem):
-    global event_count, stack, custum_vtree, alone
+    global event_count, stack, custum_vtree, alone, event_list, visited_var, var_map
     gate = event_elem.get("gate")
     event_id = event_elem.get("id")
 
@@ -33,33 +34,59 @@ def FT_vtree(event_elem):
         else:
             return 0
     
-    #child_events = [FT_vtree(child) for child in event_elem.findall("event")]
     child_events = event_elem.findall("event")
 
     if gate:
         valid_event = 0
+        common_event = 0
+        gate_child_events = []
         for child_event in child_events:
-            valid_event += FT_vtree(child_event)
-            if valid_event != 0 and valid_event % 2 == 0:
-                synthesis()
-                valid_event -= 1
-        if valid_event >= 1:
-            for i in range(valid_event-1):
-                synthesis()
-            if alone:
-                synthesis()
-                alone = False
-        if valid_event == 1:
-            if alone:
-                synthesis()
-                alone = False
-            else:
-                alone = True
-                return 0
-    return 1
+            child_gate = child_event.get("gate")
 
-def make_vtree(xml_path, pyeda_expr, vtree_file):
-    global var_map, visited_var, custum_vtree, name_prob_map
+            if child_gate is None:
+                event = FT_vtree(child_event)
+                common_event += event
+                valid_event += event
+                if common_event == 2:
+                    synthesis()
+                    common_event = 0
+                    valid_event -= 1
+                    if valid_event == 2:
+                        synthesis()
+                        valid_event -= 1
+            else:
+                gate_child_events.append(child_event)
+                
+        gate_event = valid_event
+        for child_event in gate_child_events:
+            event = FT_vtree(child_event)
+            gate_event += event
+            valid_event += event
+            if gate_event >= 2:
+                synthesis()
+                gate_event = 0
+                valid_event -= 1
+                if valid_event == 2:
+                    synthesis()
+                    valid_event -= 1
+        if valid_event > 1:
+            synthesis()
+            return 1
+        elif valid_event == 1:
+            return 1
+        else:
+            return 0
+
+def DFS_vtree(xml_path, pyeda_expr, vtree_file):
+    global var_map, visited_var, custum_vtree, event_list, name_prob_map, event_count, stack, alone
+    alone = False
+    event_count = 0
+    var_map.clear()
+    visited_var.clear()
+    custum_vtree.clear()
+    event_list.clear()
+    name_prob_map.clear()
+    stack.clear()
     support_vars = sorted([str(v) for v in pyeda_expr.support])
 
     i = 1
@@ -71,7 +98,6 @@ def make_vtree(xml_path, pyeda_expr, vtree_file):
     
     tree = ET.parse(xml_path)
     root = tree.getroot()
-
     FT_vtree(root)
 
     top = []
