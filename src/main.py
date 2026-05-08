@@ -1,8 +1,8 @@
 from FT_to_dnf import xml_to_formula, formula_to_dnf, prob_map, gate_child_map, gate_grandchild_map
 from dnf_to_sdd import run_sdd_from_pyeda_obj
 from explore import explore
-#from make_vtree import DFS_vtree
-from BFS_vtree import BFS_vtree
+#from DFS_vtree import DFS_vtree
+from BFS_vtree import BFS_vtree, child_map
 import os
 import sys
 from pathlib import Path
@@ -14,15 +14,16 @@ def main():
         path = os.getcwd()
         vtree_folder = path + "/vtree"
         output_folder = path + "/output"
+        file_name = xml_file.stem
     else:
         xml_file = "FTA/sample.xml"
         vtree_folder = "vtree"
         output_folder = "output"
+        file_name = "sample"
 
     vtree_folder += '/'
     output_folder += '/'
 
-    file_name = xml_file.stem
     print(file_name)
 
     prob_map.clear()
@@ -46,13 +47,14 @@ def main():
     for k, v in prob_map.items():
         print(f"{k}: {v}")"""
 
+    """
     print("\n--- Child map ---")
-    for k, v in gate_child_map.items():
+    for k, v in child_map.items():
         print(f"{k}: {v}")
 
     print("\n--- Grandchild map ---")
     for k, v in gate_grandchild_map.items():
-        print(f"{k}: {v}")
+        print(f"{k}: {v}")"""
 
     print("\n--- Making vtree ---")
     #DFS_vtree(xml_file, dnf_expr, vtree_folder + file_name + ".vtree")

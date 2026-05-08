@@ -3,104 +3,57 @@ from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
 import math
 
 var_map = {}
+child_map = {}
 name_prob_map = []
 visited_var = []
 custum_vtree = []
 stack = []
-alone = False
 event_count = 0
 event_list = []
 
-def synthesis():
-    global custum_vtree, stack, event_count
-    right = stack.pop()
-    left = stack.pop()
-    custum_vtree.append("I " + str(event_count) + " " + str(left) + " " + str(right))
-    stack.append(str(event_count))
-    event_count += 1
+def build_subTree(children):
+    global event_count, var_map, child_map
 
-def FT_vtree(event_elem):
-    global event_count, stack, custum_vtree, alone, event_list, visited_var, var_map
-    gate = event_elem.get("gate")
-    event_id = event_elem.get("id")
-
-    if gate is None:
-        if event_id in var_map and visited_var[var_map[event_id]-1] == 0:
-            custum_vtree.append("L " + str(event_count) + " " + str(var_map[event_id]))
-            stack.append(str(event_count))
+    if len(children) == 1:
+        if len(child_map[children[0]]) == 0:
+            custum_vtree.append("L " + str(event_count) + " " + str(var_map[children[0]]))
             event_count += 1
-            visited_var[var_map[event_id]-1] = 1
-            return 1
+            return event_count-1
         else:
-            return 0
-    
-    child_events = event_elem.findall("event")
+            return var_map[children[0]]
 
-    if gate:
-        valid_event = 0
-        common_event = 0
-        gate_child_events = []
-        for child_event in child_events:
-            child_gate = child_event.get("gate")
+    mid = len(children) // 2
+    left = build_subTree(children[:mid])
+    right = build_subTree(children[mid:])
 
-            if child_gate is None:
-                event = FT_vtree(child_event)
-                common_event += event
-                valid_event += event
-                if common_event == 2:
-                    synthesis()
-                    common_event = 0
-                    valid_event -= 1
-                    if valid_event == 2:
-                        synthesis()
-                        valid_event -= 1
-            else:
-                gate_child_events.append(child_event)
-                
-        gate_event = valid_event
-        for child_event in gate_child_events:
-            event = FT_vtree(child_event)
-            gate_event += event
-            valid_event += event
-            if gate_event >= 2:
-                synthesis()
-                gate_event = 0
-                valid_event -= 1
-                if valid_event == 2:
-                    synthesis()
-                    valid_event -= 1
-        if valid_event > 1:
-            synthesis()
-            return 1
-        elif valid_event == 1:
-            return 1
-        else:
-            return 0
+    custum_vtree.append("I " + str(event_count) + " " +  str(left) + " " + str(right))
+    event_count += 1
+    return event_count-1
 
 def BFS(event_elem):
-    global event_list
+    global event_list, child_map
     gate = event_elem.get("gate")
     id = event_elem.get("id")
-    print(id)
 
     if gate:
-        print(gate_grandchild_map[id])
         child_events = event_elem.findall("event")
-        #score_gate = {}
+        gate_events = []
         for child_event in child_events:
-            child_event_id = child_event.get("id")
-            if child_event_id in gate_child_map:
-                #core_gate[child_event_id] = gate_grandchild_map[id] & gate_child_map[child_event_id]
-                print(gate_child_map[child_event_id])
-                print(len(gate_grandchild_map[id] & gate_child_map[child_event_id]))
-        for child_event in child_events:
-            event_list.append(child_event)
-    else:
-        return id
+            child_gate = child_event.get("gate")
+            child_id = child_event.get("id")
+
+            if child_gate:
+                gate_events.append(child_event)
+            elif child_id not in child_map:
+                child_map[id].append(child_id)
+            child_map[child_id] = []
+        for gate_event in gate_events:
+            child_id = gate_event.get("id")
+            child_map[id].append(child_id)
+            event_list.append(gate_event)
 
 def BFS_vtree(xml_path, pyeda_expr, vtree_file):
-    global var_map, visited_var, custum_vtree, event_list, name_prob_map, event_count, stack, alone
-    alone = False
+    global var_map, visited_var, custum_vtree, event_list, name_prob_map, event_count, stack, child_map
     event_count = 0
     var_map.clear()
     visited_var.clear()
@@ -108,6 +61,7 @@ def BFS_vtree(xml_path, pyeda_expr, vtree_file):
     event_list.clear()
     name_prob_map.clear()
     stack.clear()
+    child_map.clear()
     support_vars = sorted([str(v) for v in pyeda_expr.support])
 
     i = 1
@@ -119,12 +73,22 @@ def BFS_vtree(xml_path, pyeda_expr, vtree_file):
     
     tree = ET.parse(xml_path)
     root = tree.getroot()
-    FT_vtree(root)
+    root_id = root.get("id")
 
-    """event_list.append(root)
+    event_list.append(root)
+    child_map[root_id] = []
 
     for event in event_list:
-        BFS(event)"""
+        BFS(event)
+
+    for parent_name, children in reversed(child_map.items()):
+        if len(children) > 0:
+
+            print(parent_name,children)
+
+            var_map[parent_name] = build_subTree(children)
+
+            print(parent_name, var_map[parent_name])
 
     top = []
     top.append("vtree " + str(event_count))
