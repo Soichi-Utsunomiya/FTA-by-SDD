@@ -1,5 +1,4 @@
 from FT_to_dnf import prob_map
-#from make_vtree import name_prob_map
 from BFS_vtree import name_prob_map
 from decimal import *
 
@@ -31,5 +30,4 @@ def explore(current_node):
             else:
                 probability_s = Decimal(name_prob_map[s.literal-1])
         probability += probability_p * probability_s
-        #print(probability)
     return probability

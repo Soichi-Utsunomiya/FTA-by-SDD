@@ -1,15 +1,12 @@
 import xml.etree.ElementTree as ET
-from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
-import math
+from FT_to_dnf import prob_map
+from collections import deque
 
 var_map = {}
 child_map = {}
 name_prob_map = []
-visited_var = []
 custum_vtree = []
-stack = []
 event_count = 0
-event_list = []
 
 def build_subTree(children):
     global event_count, var_map, child_map
@@ -30,65 +27,58 @@ def build_subTree(children):
     event_count += 1
     return event_count-1
 
-def BFS(event_elem):
-    global event_list, child_map
-    gate = event_elem.get("gate")
-    id = event_elem.get("id")
-
-    if gate:
-        child_events = event_elem.findall("event")
-        gate_events = []
-        for child_event in child_events:
-            child_gate = child_event.get("gate")
-            child_id = child_event.get("id")
-
-            if child_gate:
-                gate_events.append(child_event)
-            elif child_id not in child_map:
-                child_map[id].append(child_id)
-            child_map[child_id] = []
-        for gate_event in gate_events:
-            child_id = gate_event.get("id")
-            child_map[id].append(child_id)
-            event_list.append(gate_event)
-
-def BFS_vtree(xml_path, pyeda_expr, vtree_file):
-    global var_map, visited_var, custum_vtree, event_list, name_prob_map, event_count, stack, child_map
+def BFS_vtree(xml_path, vtree_file):
+    global var_map, custum_vtree, name_prob_map, event_count, child_map
     event_count = 0
     var_map.clear()
-    visited_var.clear()
     custum_vtree.clear()
-    event_list.clear()
     name_prob_map.clear()
-    stack.clear()
     child_map.clear()
-    support_vars = sorted([str(v) for v in pyeda_expr.support])
+
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    prob_map = {}
+
+    support_vars_set = set()
+    for elem in root.iter("event"):
+        if elem.get("gate") is None and elem.get("id") is not None:
+            support_vars_set.add(elem.get("id"))
+            prob_map[elem.get("id")] = elem.get("value")
+    support_vars = sorted(list(support_vars_set))
 
     i = 1
     for var in support_vars:
         var_map[var] = i
         name_prob_map.append(prob_map[var])
-        visited_var.append(0)
         i += 1
-    
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
-    root_id = root.get("id")
 
-    event_list.append(root)
-    child_map[root_id] = []
+    queue = deque([root])
+    child_map[root.get("id")] = []
 
-    for event in event_list:
-        BFS(event)
+    while queue:
+        event = queue.popleft()
+        gate = event.get("gate")
+        id = event.get("id")
+
+        if gate:
+            child_events = event.findall("event")
+            for child_event in child_events:
+                child_gate = child_event.get("gate")
+                child_id = child_event.get("id")
+                if id not in child_map:
+                    child_map[id] = []
+                child_map[id].append(child_id)
+                if child_gate:
+                    if child_id not in child_map:
+                        child_map[child_id] = []
+                    queue.append(child_event)
+                else:
+                    child_map[child_id] = []
 
     for parent_name, children in reversed(child_map.items()):
         if len(children) > 0:
-
-            print(parent_name,children)
-
             var_map[parent_name] = build_subTree(children)
-
-            print(parent_name, var_map[parent_name])
 
     top = []
     top.append("vtree " + str(event_count))
