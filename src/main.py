@@ -1,7 +1,7 @@
-from FT_to_dnf import xml_to_formula, formula_to_dnf, prob_map, gate_child_map, gate_grandchild_map
 from dnf_to_sdd import run_sdd_from_pyeda_obj
-from explore import explore
+from explore import *
 from BFS_vtree import BFS_vtree, child_map
+from read_FT import read_FT
 import os
 import sys
 from pathlib import Path
@@ -25,33 +25,25 @@ def main():
 
     print(file_name)
 
-    prob_map.clear()
-    gate_child_map.clear()
-    gate_grandchild_map.clear()
-    
     start_time = time.perf_counter()
-    """
-    # 1. XML -> 論理式文字列
-    formula_str = xml_to_formula(xml_file)
-    print("--- Expression ---")
-    print(formula_str)
-    
-    # 2. 文字列 -> PyEDAオブジェクト (DNF化)
-    dnf_expr = formula_to_dnf(formula_str)"""
     
     print("\n--- Making vtree ---")
-    BFS_vtree(xml_file, vtree_folder + file_name + ".vtree")
 
-    # 3. PyEDAオブジェクト -> SDD
-    sdd_node = run_sdd_from_pyeda_obj(xml_file, output_folder + file_name, vtree_folder + file_name + ".vtree")
+    top_gate, var_map, gate_map, par_map = read_FT(xml_file)
+    BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
 
-    probability = explore(sdd_node)
+    sdd_node = run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
+
+    #probability = explore(sdd_node)
+    print(par_map)
+    evaluator = SDDEvaluator(par_map)
+    probability = evaluator.explore(sdd_node)
     print(f"Probability:{probability}")
 
     print(f"Nodes:{sdd_node.size()}")
 
     end_time = time.perf_counter()
-    print(f"Time:{(end_time-start_time)*1000}ms\n")
+    print(f"Time:{(end_time-start_time)}s\n")
 
 if __name__ == "__main__":
     main()
