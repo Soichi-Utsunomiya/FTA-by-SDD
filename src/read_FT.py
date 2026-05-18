@@ -45,7 +45,11 @@ def read_FT(xml_file):
     var_map = {}
     par_map = {}
     all_gates = set()
-    tree = ET.parse(xml_file).find("define-fault-tree")
+    root = ET.parse(xml_file)
+    tree = root.find("define-fault-tree")
+
+    if root.find("model-data") is not None:
+        tree = root.find("model-data")
 
     parameters = tree.findall("define-parameter")
     for parameter in parameters:
@@ -55,7 +59,6 @@ def read_FT(xml_file):
             def_par[name] = ExponentialModel(lambda_rate).evaluate(mission_time)
         elif parameter.find("parameter") is not None:
             def_par[name] = def_par[parameter.find("parameter").get("name")]
-    print(def_par)
 
     basic_events = tree.findall("define-basic-event")
     var = 1
@@ -67,7 +70,12 @@ def read_FT(xml_file):
             par_map[var] = value
             var_map[name] = var
             var += 1
+        else:
+            par_map[var] = basic_event.find("float").get("value")
+            var_map[name] = var
+            var += 1
 
+    tree = root.find("define-fault-tree")
     all_children = set()
     gate_events = tree.findall("define-gate")
     for gate_event in gate_events:
@@ -75,13 +83,14 @@ def read_FT(xml_file):
         all_gates.add(name)
         elem = gate_event[0]
         gate = elem.tag
-        children = [child.get("name") for child in elem]
+        children = []
+        for child in elem:
+            children.append(child.get("name"))
         all_children.update(children)
         gate_map[name] = GateNode(
             gate_type=gate,
             children=children
         )
-    print(gate_map)
 
     top_gates = all_gates - all_children
     if len(top_gates) > 1:

@@ -30,18 +30,36 @@ def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
 
     queue = deque([top_gate])
     order_event = [top_gate]
+    visited_event = set()
+    elim_DAG = {}
 
     while queue:
         event = queue.popleft()
-        if event in gate_map and len(gate_map[event].children) > 0:
+        visited_event.add(event)
+        if event in gate_map:
+            elim_DAG[event] = []
             for child_event in gate_map[event].children:
-                queue.append(child_event)
-                order_event.append(child_event)
+                if child_event not in visited_event:
+                    queue.append(child_event)
+                    order_event.append(child_event)
+                    elim_DAG[event].append(child_event)
+                    visited_event.add(child_event)
 
+    child_num = {}
     for event in reversed(order_event):
-        if event in gate_map and len(gate_map[event].children) > 0:
-            v_map[event] = build_subTree(gate_map[event].children)
-        else:
+        if event in elim_DAG:
+            valid_event = []
+            for child_event in elim_DAG[event]:
+                if child_num[child_event] == 1:
+                    valid_event.append(child_event)
+            if len(valid_event) > 0:
+                v_map[event] = build_subTree(valid_event)
+                child_num[event] = 1
+            else:
+                child_num[event] = 0
+
+        elif event not in elim_DAG:
+            child_num[event] = 1
             custum_vtree.append("L " + str(event_count) + " " + str(var_map[event]))
             v_map[event] = event_count
             event_count += 1

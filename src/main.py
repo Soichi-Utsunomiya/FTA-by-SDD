@@ -1,6 +1,6 @@
 from dnf_to_sdd import run_sdd_from_pyeda_obj
 from explore import *
-from BFS_vtree import BFS_vtree, child_map
+from BFS_vtree import *
 from read_FT import read_FT
 import os
 import sys
@@ -30,16 +30,17 @@ def main():
     print("\n--- Making vtree ---")
 
     top_gate, var_map, gate_map, par_map = read_FT(xml_file)
+    
     BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
 
-    sdd_node = run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
-
-    #probability = explore(sdd_node)
-    print(par_map)
+    sdd_node, sdd_manager= run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
+    
+    
     evaluator = SDDEvaluator(par_map)
+    print(evaluator.par_map)
     probability = evaluator.explore(sdd_node)
     print(f"Probability:{probability}")
-
+    
     print(f"Nodes:{sdd_node.size()}")
 
     end_time = time.perf_counter()
