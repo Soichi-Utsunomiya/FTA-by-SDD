@@ -9,6 +9,33 @@ class SDDBuilder:
         self.gate_map = gate_map
         self.cache = {}
 
+    def _build_at_least(self, k, child_sdds):
+        """k-out-of-n (ATLEAST) ゲートを動的計画法で構築する内部メソッド"""
+        n = len(child_sdds)
+        
+        # 安全対策：kが0以下なら常にTrue、変数の数より多ければ常にFalse
+        if k <= 0: return child_sdds[0] | ~child_sdds[0]
+        if k > n: return child_sdds[0] & ~child_sdds[0]
+
+        memo = {}
+        true_node = child_sdds[0] | ~child_sdds[0]
+        false_node = child_sdds[0] & ~child_sdds[0]
+
+        def dp(i, needed):
+            if needed <= 0:
+                return true_node
+            if n - i < needed:
+                return false_node
+            if (i, needed) in memo:
+                return memo[(i, needed)]
+
+            var_node = child_sdds[i]
+            res = (var_node & dp(i + 1, needed - 1)) | (~var_node & dp(i + 1, needed))
+            memo[(i, needed)] = res
+            return res
+
+        return dp(0, k)
+    
     def build_from_name(self, event_name):
         if event_name in self.cache:
             return self.cache[event_name]
@@ -36,7 +63,22 @@ class SDDBuilder:
         elif gate_type == "OR":
             for child_sdd in child_sdds[1:]:
                 result_sdd = result_sdd | child_sdd
-        else:
+        elif gate_type == "NOT":
+            result_sdd = ~result_sdd
+        elif gate_type == "NAND":
+            for child_sdd in child_sdds[1:]:
+                result_sdd = result_sdd & child_sdd
+            result_sdd = ~result_sdd
+        elif gate_type == "NOR":
+            for child_sdd in child_sdds[1:]:
+                result_sdd = result_sdd | child_sdd
+            result_sdd = ~result_sdd
+        elif gate_type == "ATLEAST":
+            # ★ ATLEASTの処理を追加
+            if getattr(gate_node, 'k', None) is None:
+                raise ValueError(f"ATLEASTゲート '{event_name}' に閾値 'k' が設定されていません。")
+            result_sdd = self._build_at_least(gate_node.k, child_sdds)
+        elif gate_type != "PASS":
             raise ValueError(f"Unknown gate type: {gate_type}")
 
         # ★追加：完成したゲートのSDDを記憶しておく

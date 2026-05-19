@@ -26,3 +26,5 @@ dist/
 *.csv
 .env
 secret_key.txt
+
+src/BDD_as_pySDD.py

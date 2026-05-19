@@ -10,12 +10,13 @@ from pathlib import Path
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 @dataclass
 class GateNode:
     gate_type: str
     children: List[str] = field(default=list)
+    k: Optional[int] = None
 
 class Expression(ABC):
     @abstractmethod
@@ -64,7 +65,6 @@ def read_FT(xml_file):
     var = 1
     for basic_event in basic_events:
         name = basic_event.get("name")
-        all_gates.add(name)
         if basic_event.find("exponential")is not None:
             value = def_par[basic_event.find("exponential").find("parameter").get("name")]
             par_map[var] = value
@@ -81,15 +81,40 @@ def read_FT(xml_file):
     for gate_event in gate_events:
         name = gate_event.get("name")
         all_gates.add(name)
+        
         elem = gate_event[0]
-        gate = elem.tag
+        gate_type = elem.tag
         children = []
-        for child in elem:
-            children.append(child.get("name"))
-        all_children.update(children)
+        k = None
+        
+        # パターン1: 直下が <and> や <or> などの論理演算子の場合
+        if gate_type in ["and", "or", "not", "nand", "nor"]:
+            for child in elem:
+                child_name = child.get("name")
+                children.append(child_name)
+                if child_name not in var_map:
+                    all_children.add(child_name)
+                    
+        # パターン2: 直下が直接のイベントやゲート（パススルー）の場合
+        elif gate_type in ["basic-event", "gate", "event", "house-event"]:
+            child_name = elem.get("name")
+            children.append(child_name)
+            if child_name not in var_map:
+                all_children.add(child_name)
+            gate_type = "pass" 
+        
+        elif gate_type == "atleast":
+            k = int(elem.get("min"))
+            for child in elem:
+                child_name = child.get("name")
+                children.append(child_name)
+                if child_name not in var_map:
+                    all_children.add(child_name)
+            
         gate_map[name] = GateNode(
-            gate_type=gate,
-            children=children
+            gate_type=gate_type,
+            children=children,
+            k = k
         )
 
     top_gates = all_gates - all_children
@@ -101,5 +126,6 @@ def read_FT(xml_file):
         return
     
     top_gate = top_gates.pop()
+    print(top_gate)
 
     return top_gate, var_map, gate_map, par_map

@@ -30,14 +30,12 @@ def main():
     print("\n--- Making vtree ---")
 
     top_gate, var_map, gate_map, par_map = read_FT(xml_file)
-    
+
     BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
 
     sdd_node, sdd_manager= run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
     
-    
     evaluator = SDDEvaluator(par_map)
-    print(evaluator.par_map)
     probability = evaluator.explore(sdd_node)
     print(f"Probability:{probability}")
     
