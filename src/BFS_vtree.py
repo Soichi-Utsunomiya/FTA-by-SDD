@@ -40,6 +40,8 @@ def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
             print(event,gate_map[event].children)
             elim_DAG[event] = []
             for child_event in gate_map[event].children:
+                if child_event[0] == '~':
+                    child_event = child_event.removeprefix('~')
                 if child_event not in visited_event:
                     queue.append(child_event)
                     order_event.append(child_event)

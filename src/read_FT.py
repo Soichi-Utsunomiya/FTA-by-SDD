@@ -90,8 +90,13 @@ def read_FT(xml_file):
         # パターン1: 直下が <and> や <or> などの論理演算子の場合
         if gate_type in ["and", "or", "not", "nand", "nor"]:
             for child in elem:
-                child_name = child.get("name")
-                children.append(child_name)
+                if child.tag == "not":
+                    child_name = child[0].get("name")
+                    not_child_name = f"~{child_name}"
+                    children.append(not_child_name)
+                else:
+                    child_name = child.get("name")
+                    children.append(child_name)
                 if child_name not in var_map:
                     all_children.add(child_name)
                     

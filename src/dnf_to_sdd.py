@@ -37,10 +37,18 @@ class SDDBuilder:
         return dp(0, k)
     
     def build_from_name(self, event_name):
+        if event_name[0] == '~':
+            event_name = event_name.removeprefix('~')
+            if event_name in self.cache:
+                return ~self.cache[event_name]
         if event_name in self.cache:
             return self.cache[event_name]
 
         if event_name not in self.gate_map:
+            if event_name[0] == '~':
+                event_name = event_name.removeprefix('~')
+                result_sdd = self.sdd_manager.literal(self.var_map[event_name])
+                return ~result_sdd
             if event_name not in self.var_map:
                 raise ValueError(f"Unknown event ID: {event_name}")
             result_sdd = self.sdd_manager.literal(self.var_map[event_name])
