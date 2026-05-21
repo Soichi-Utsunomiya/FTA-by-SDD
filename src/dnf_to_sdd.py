@@ -81,8 +81,17 @@ class SDDBuilder:
             for child_sdd in child_sdds[1:]:
                 result_sdd = result_sdd | child_sdd
             result_sdd = ~result_sdd
+        elif gate_type == "XOR":
+            # フォールトツリーにおけるXORは通常「2つの事象のうちどちらか片方のみが起きる」ことを指します
+            if len(child_sdds) != 2:
+                raise ValueError(f"XORゲート '{event_name}' には2つの子ノードが必要です（現在 {len(child_sdds)} 個）。")
+            
+            node_A = child_sdds[0]
+            node_B = child_sdds[1]
+            
+            # (A & ~B) | (~A & B) を計算
+            result_sdd = (node_A & ~node_B) | (~node_A & node_B)
         elif gate_type == "ATLEAST":
-            # ★ ATLEASTの処理を追加
             if getattr(gate_node, 'k', None) is None:
                 raise ValueError(f"ATLEASTゲート '{event_name}' に閾値 'k' が設定されていません。")
             result_sdd = self._build_at_least(gate_node.k, child_sdds)

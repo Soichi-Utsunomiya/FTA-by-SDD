@@ -88,7 +88,7 @@ def read_FT(xml_file):
         k = None
         
         # パターン1: 直下が <and> や <or> などの論理演算子の場合
-        if gate_type in ["and", "or", "not", "nand", "nor"]:
+        if gate_type in ["and", "or", "not", "nand", "nor", "xor"]:
             for child in elem:
                 if child.tag == "not":
                     child_name = child[0].get("name")
