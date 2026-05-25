@@ -1,12 +1,4 @@
 import xml.etree.ElementTree as ET
-from pysdd.sdd import SddManager, Vtree
-import os
-import sys
-import time
-from decimal import Decimal
-import xml.etree.ElementTree as ET
-from collections import deque
-from pathlib import Path
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -47,17 +39,20 @@ def read_FT(xml_file):
     par_map = {}
     all_gates = set()
     root = ET.parse(xml_file)
-    tree = root.find("define-fault-tree")
-
     if root.find("model-data") is not None:
         tree = root.find("model-data")
+    else:  
+        tree = root.find("define-fault-tree")
+
+    if tree is None:
+        return None, None, None, None
 
     parameters = tree.findall("define-parameter")
     for parameter in parameters:
         name = parameter.get("name")
         if parameter.find("lognormal-deviate")is not None:
             lambda_rate = float(parameter.find("lognormal-deviate").find("float").get("value"))
-            def_par[name] = ExponentialModel(lambda_rate).evaluate(mission_time)
+            def_par[name] = ExponentialModel(lambda_rate)
         elif parameter.find("parameter") is not None:
             def_par[name] = def_par[parameter.find("parameter").get("name")]
 
@@ -67,7 +62,10 @@ def read_FT(xml_file):
         name = basic_event.get("name")
         if basic_event.find("exponential")is not None:
             value = def_par[basic_event.find("exponential").find("parameter").get("name")]
-            par_map[var] = value
+            time = 1
+            if basic_event.find("exponential").find("mul") is not None:
+                time = float(basic_event.find("exponential").find("mul")[0].get("value"))
+            par_map[var] = value.evaluate(mission_time*time)
             var_map[name] = var
             var += 1
         else:

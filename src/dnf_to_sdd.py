@@ -1,6 +1,4 @@
 from pysdd.sdd import SddManager, Vtree
-import xml.etree.ElementTree as ET
-import sys
 
 class SDDBuilder:
     def __init__(self, sdd_manager, var_map, gate_map):

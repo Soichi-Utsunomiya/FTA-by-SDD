@@ -26,10 +26,11 @@ def main():
     print(file_name)
 
     start_time = time.perf_counter()
-    
-    print("\n--- Making vtree ---")
 
     top_gate, var_map, gate_map, par_map = read_FT(xml_file)
+    if top_gate is None and var_map is None and gate_map is None and par_map is None:
+        print("This tree is not Fault Tree!")
+        return None
 
     BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
 
