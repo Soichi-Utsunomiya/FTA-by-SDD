@@ -103,6 +103,7 @@ class SDDBuilder:
 def run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_file, vtree_file):
     
     print(f"Converting PyEDA object to SDD... ")
+    print(var_map)
 
     vtree = Vtree.from_file(vtree_file.encode())
     sdd_manager = SddManager.from_vtree(vtree)

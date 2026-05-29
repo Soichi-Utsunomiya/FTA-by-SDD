@@ -9,13 +9,16 @@ import time
 
 def main():
     if len(sys.argv)>1:
-        xml_file = Path(sys.argv[1])
+        xml_files = []
+        for i in range(1,len(sys.argv)):
+            print(sys.argv[i])
+            xml_files.append(Path(sys.argv[i]))
         path = os.getcwd()
         vtree_folder = path + "/vtree"
         output_folder = path + "/output"
-        file_name = xml_file.stem
+        file_name = xml_files[0].stem
     else:
-        xml_file = "FTA/sample.xml"
+        xml_files = "FTA/sample.xml"
         vtree_folder = "vtree"
         output_folder = "output"
         file_name = "sample"
@@ -27,7 +30,7 @@ def main():
 
     start_time = time.perf_counter()
 
-    top_gate, var_map, gate_map, par_map = read_FT(xml_file)
+    top_gate, var_map, gate_map, par_map = read_FT(xml_files)
     if top_gate is None and var_map is None and gate_map is None and par_map is None:
         print("This tree is not Fault Tree!")
         return None
@@ -36,6 +39,7 @@ def main():
 
     sdd_node, sdd_manager= run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
     
+    print(par_map)
     evaluator = SDDEvaluator(par_map)
     probability = evaluator.explore(sdd_node)
     print(f"Probability:{probability}")
