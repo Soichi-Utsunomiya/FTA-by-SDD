@@ -11,7 +11,6 @@ def main():
     if len(sys.argv)>1:
         xml_files = []
         for i in range(1,len(sys.argv)):
-            print(sys.argv[i])
             xml_files.append(Path(sys.argv[i]))
         path = os.getcwd()
         vtree_folder = path + "/vtree"
