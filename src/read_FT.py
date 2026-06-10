@@ -232,18 +232,6 @@ def read_FT(xml_files):
         record_parameters(r, prefix)
         record_basic_events(r, prefix)
 
-    def synthesis(root1, root2):
-        records(root1.find("model-data"), "")
-
-        records(root2.find("define-fault-tree"), "")
-
-        components = root2.find("define-fault-tree").findall("define-component")
-        for component in components:
-            process_component(component, "")
-        
-        record_gate_events(root2.find("define-fault-tree"), "")
-
-
     mission_time = 8760.0
 
     def_par = {}

@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-from FT_to_dnf import gate_child_map, gate_grandchild_map, prob_map
 import math
 
 var_map = {}

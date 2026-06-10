@@ -35,23 +35,43 @@ class SDDBuilder:
         return dp(0, k)
     
     def build_from_name(self, event_name):
-        if event_name[0] == '~':
-            event_name = event_name.removeprefix('~')
-            if event_name in self.cache:
-                return ~self.cache[event_name]
-        if event_name in self.cache:
-            return self.cache[event_name]
+       # 元の名前を保持しておく
+        original_event_name = event_name
+        is_not = False
 
-        if event_name not in self.gate_map:
-            if event_name[0] == '~':
-                event_name = event_name.removeprefix('~')
-                result_sdd = self.sdd_manager.literal(self.var_map[event_name])
+        if event_name[0] == '~':
+            is_not = True
+            event_name = event_name.removeprefix('~') # ここで prefix を外す
+
+        # 【1】キャッシュのチェック
+        if event_name in self.cache:
+            result_sdd = self.cache[event_name]
+            # 否定として呼ばれたなら、キャッシュのSDDを否定にして返す
+            if is_not:
                 return ~result_sdd
+            return result_sdd
+
+        # 【2】基本事象（葉ノード）の処理
+        if event_name not in self.gate_map:
             if event_name not in self.var_map:
                 raise ValueError(f"Unknown event ID: {event_name}")
+            
+            # PySDDの肯定リテラルノードを生成
             result_sdd = self.sdd_manager.literal(self.var_map[event_name])
+            
+            # キャッシュには「肯定のノード」として保存する（※重要）
             self.cache[event_name] = result_sdd
+            
+            # 否定として呼ばれていたなら、否定にして返す
+            if is_not:
+                return ~result_sdd
             return result_sdd
+        
+        # 【3】ゲート（中間ノード）の処理はここから下へ続く...
+        # ゲートの計算結果（gate_sdd）が得られたら、
+        # self.cache[event_name] = gate_sdd  でキャッシュに保存し、
+        # if is_not: return ~gate_sdd
+        # return gate_sdd  のように返す。
 
         gate_node = self.gate_map[event_name]
         
@@ -95,15 +115,21 @@ class SDDBuilder:
             result_sdd = self._build_at_least(gate_node.k, child_sdds)
         elif gate_type != "PASS":
             raise ValueError(f"Unknown gate type: {gate_type}")
-
+        
         # ★追加：完成したゲートのSDDを記憶しておく
+        # キャッシュには必ず「肯定（ベース）」の形で保存する
         self.cache[event_name] = result_sdd
+        
+        # ★★★ここが抜けていました！★★★
+        # もし親から「否定（~）」として呼ばれていたなら、反転させてから返す
+        if is_not:
+            return ~result_sdd
+            
         return result_sdd
 
 def run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_file, vtree_file):
     
     print(f"Converting PyEDA object to SDD... ")
-    print(var_map)
 
     vtree = Vtree.from_file(vtree_file.encode())
     sdd_manager = SddManager.from_vtree(vtree)
@@ -111,12 +137,7 @@ def run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_file, vtree_file)
     sdd_builder = SDDBuilder(sdd_manager, var_map, gate_map)
     sdd_node = sdd_builder.build_from_name(top_gate)
 
-    with open(output_file + "_sdd.dot", "w") as out:
-        print(sdd_node.dot(), file=out)
-    with open(output_file + "_vtree.dot", "w") as out:
-        print(vtree.dot(), file=out)
     
     print("Conversion successful.")
     
-    # ★修正：sdd_nodeだけでなく、絶対に sdd_manager も一緒に返す！
     return sdd_node, sdd_manager
