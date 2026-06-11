@@ -25,8 +25,6 @@ def main():
     vtree_folder += '/'
     output_folder += '/'
 
-    print(file_name)
-
     start_time = time.perf_counter()
 
     top_gate, var_map, gate_map, par_map = read_FT(xml_files)
@@ -38,14 +36,11 @@ def main():
 
     sdd_node, sdd_manager= run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
     
-    print(par_map)
     evaluator = SDDEvaluator(par_map)
     probability = evaluator.explore(sdd_node)
-    print(f"Probability:{probability}")
-    
-    print(f"Nodes:{sdd_node.size()}")
-
     end_time = time.perf_counter()
+    print(f"Probability:{probability}")
+    print(f"Nodes:{sdd_node.size()}")
     print(f"Time:{(end_time-start_time)}s\n")
 
 if __name__ == "__main__":

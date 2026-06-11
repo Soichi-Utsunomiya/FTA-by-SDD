@@ -129,7 +129,7 @@ class SDDBuilder:
 
 def run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_file, vtree_file):
     
-    print(f"Converting PyEDA object to SDD... ")
+    #print(f"Converting PyEDA object to SDD... ")
 
     vtree = Vtree.from_file(vtree_file.encode())
     sdd_manager = SddManager.from_vtree(vtree)
@@ -137,7 +137,6 @@ def run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_file, vtree_file)
     sdd_builder = SDDBuilder(sdd_manager, var_map, gate_map)
     sdd_node = sdd_builder.build_from_name(top_gate)
 
-    
-    print("Conversion successful.")
+    #print("Conversion successful.")
     
     return sdd_node, sdd_manager

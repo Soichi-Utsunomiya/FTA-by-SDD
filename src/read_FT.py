@@ -242,7 +242,7 @@ def read_FT(xml_files):
     all_children = set()
     exist_basic_events = set()
     for xmlfile in xml_files:
-        print(xmlfile)
+        #print(xmlfile)
         root = ET.parse(xmlfile)
         if root.find("model-data") is not None:
             records(root.find("model-data"), "")

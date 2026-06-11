@@ -36,7 +36,7 @@ def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
         event = queue.popleft()
         visited_event.add(event)
         if event in gate_map:
-            print(event,gate_map[event].children)
+            #print(event,gate_map[event].children)
             elim_DAG[event] = []
             for child_event in gate_map[event].children:
                 if child_event[0] == '~':
