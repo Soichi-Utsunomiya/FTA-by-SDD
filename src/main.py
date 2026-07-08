@@ -1,6 +1,7 @@
 from dnf_to_sdd import run_sdd_from_pyeda_obj
 from explore import *
 from BFS_vtree import *
+from lca_BFS_vtree import *
 from read_FT import read_FT
 import os
 import sys
@@ -17,7 +18,7 @@ def main():
         output_folder = path + "/output"
         file_name = xml_files[0].stem
     else:
-        xml_files = "FTA/sample.xml"
+        xml_files = "FTA/baobab3.xml"
         vtree_folder = "vtree"
         output_folder = "output"
         file_name = "sample"
@@ -32,7 +33,8 @@ def main():
         print("This tree is not Fault Tree!")
         return None
 
-    BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
+    #BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
+    lca_BFS_vtree(top_gate, var_map, gate_map, vtree_folder + file_name + ".vtree")
 
     sdd_node, sdd_manager= run_sdd_from_pyeda_obj(top_gate, var_map, gate_map, output_folder + file_name, vtree_folder + file_name + ".vtree")
     

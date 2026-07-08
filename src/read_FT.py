@@ -206,8 +206,8 @@ def read_FT(xml_files):
                     children.append(child_name)
                     if child_name not in all_basic_events:
                         all_children.add(child_name) 
-                    else:   
-                       exist_basic_events.add(child_name)
+                    else:
+                        exist_basic_events.add(child_name)
                 
             gate_map[name] = GateNode(
                 gate_type=gate_type,
@@ -241,8 +241,8 @@ def read_FT(xml_files):
     all_gates = set()
     all_children = set()
     exist_basic_events = set()
+
     for xmlfile in xml_files:
-        #print(xmlfile)
         root = ET.parse(xmlfile)
         if root.find("model-data") is not None:
             records(root.find("model-data"), "")

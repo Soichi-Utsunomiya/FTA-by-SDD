@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
- <event type="no-basic" id="G1" gate="AND" >
-      <event id="A" value="0.2"/>
-      <event id="B" value="0.2"/>
-      <event id="C" value="0.2"/>
-      <event id="D" value="0.2"/>
-  </event>
