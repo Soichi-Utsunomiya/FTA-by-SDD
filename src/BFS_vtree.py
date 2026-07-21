@@ -1,4 +1,6 @@
 from collections import deque
+import tempfile
+import os
 
 v_map = {}
 child_map = {}
@@ -16,16 +18,22 @@ def build_subTree(children):
     left = build_subTree(children[:mid])
     right = build_subTree(children[mid:])
 
-    custum_vtree.append("I " + str(event_count) + " " +  str(left) + " " + str(right))
+    custum_vtree.append("I " + str(event_count) + " " + str(left) + " " + str(right))
     event_count += 1
-    return event_count-1
+    return event_count - 1
 
-def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
-    global custum_vtree, name_prob_map, event_count, child_map
+def BFS_vtree(top_gate, var_map, gate_map):
+    """
+    FTのBFS走査に基づく平衡木vtreeを構築し、
+    PySDDが読み込めるバイト列として返す。
+    ファイルへの永続的な書き出しは行わない。
+    """
+    global custum_vtree, name_prob_map, event_count, child_map, v_map
     event_count = 0
-    custum_vtree.clear()
-    name_prob_map.clear()
-    child_map.clear()
+    custum_vtree = []
+    name_prob_map = []
+    child_map = {}
+    v_map = {}
 
     queue = deque([top_gate])
     order_event = [top_gate]
@@ -36,7 +44,6 @@ def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
         event = queue.popleft()
         visited_event.add(event)
         if event in gate_map:
-            #print(event,gate_map[event].children)
             elim_DAG[event] = []
             for child_event in gate_map[event].children:
                 if child_event[0] == '~':
@@ -59,17 +66,25 @@ def BFS_vtree(top_gate, var_map, gate_map, vtree_file):
                 child_num[event] = 1
             else:
                 child_num[event] = 0
-
-        elif event not in elim_DAG:
+        else:
             child_num[event] = 1
             custum_vtree.append("L " + str(event_count) + " " + str(var_map[event]))
             v_map[event] = event_count
             event_count += 1
 
-    top = []
-    top.append("vtree " + str(event_count))
-    custum_vtree = top + custum_vtree
+    lines = ["vtree " + str(event_count)] + custum_vtree
+    return "\n".join(lines).encode()
 
-    with open(vtree_file, "w") as out:
-        for row in custum_vtree:
-            print(row, file = out)
+
+def BFS_vtree_to_tempfile(top_gate, var_map, gate_map):
+    """
+    vtreeのバイト列を一時ファイルに書き出し、
+    そのパスを返す。呼び出し元で削除すること。
+    """
+    vtree_bytes = BFS_vtree(top_gate, var_map, gate_map)
+    tmp = tempfile.NamedTemporaryFile(
+        mode='wb', suffix='.vtree', delete=False
+    )
+    tmp.write(vtree_bytes)
+    tmp.close()
+    return tmp.name

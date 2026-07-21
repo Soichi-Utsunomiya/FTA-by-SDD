@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, defaultdict
 
 v_map = {}
 child_map = {}
@@ -10,7 +10,11 @@ def build_balanced_subTree(children):
     global event_count, v_map, child_map
 
     if len(children) == 1:
-        return v_map[children[0]]
+        child = children[0]
+        if isinstance(child, int):
+            return child
+        else:
+            return v_map[child]
 
     mid = len(children) // 2
     left = build_balanced_subTree(children[:mid])
@@ -24,14 +28,63 @@ def build_right_subTree(children):
     global event_count, v_map, child_map
 
     if len(children) == 1:
-        return v_map[children[0]]
+        child = children[0]
+        if isinstance(child, int):
+            return child
+        else:
+            return v_map[child]
 
-    left = v_map[children[0]]
+    left_child = children[0]
+    if isinstance(left_child, int):
+        left = left_child
+    else:
+        left = v_map[left_child]
     right = build_right_subTree(children[1:])
 
     custum_vtree.append("I " + str(event_count) + " " +  str(left) + " " + str(right))
     event_count += 1
     return event_count-1
+
+# paths は [(事象名, [LCAからの経路]), ...] のリスト
+def build_topological_subTree(paths):
+    # 1. 経路が空（末端の基本事象に到達）なら、その事象を返す
+    if len(paths) == 1 and len(paths[0][1]) == 0:
+        return paths[0][0] # 基本事象の名前 (例: 'e1')
+
+    # 2. 次のゲート（経路の先頭）でグループ化する
+    groups = defaultdict(list)
+    for event_name, path in paths:
+        if len(path) == 0:
+            # 経路がない場合はそのままグループ化（通常は発生しないよう調整）
+            groups[event_name].append((event_name, path))
+        else:
+            next_gate = path[0]
+            # 経路の先頭を取り除いてグループに追加
+            groups[next_gate].append((event_name, path[1:]))
+
+    # 3. 各グループ（子ゲートのまとまり）に対して再帰的にvtreeを構築
+    subtrees = []
+    for group_key, group_paths in groups.items():
+        # 再帰呼び出しで、下層のFT構造を反映したvtreeの根のIDを取得
+        subtree_root = build_topological_subTree(group_paths)
+        subtrees.append(subtree_root)
+
+    # 4. 現在の階層で、完成した部分木同士を結合する
+    # ※ここは依存関係の強い「塊（モジュール）」同士の結合なので、
+    # バランス木（build_balanced_subTree）で結合してOKです。
+    return build_balanced_subTree(subtrees)
+
+def extract_fast_path(lca_gate, target_event, first_parent):
+    path = []
+    curr = target_event
+    # ターゲットから親を辿り、LCAまで遡る
+    while curr != lca_gate:
+        path.append(curr)
+        curr = first_parent[curr]
+    path.append(lca_gate)
+    
+    path.reverse() # 上からの順序に反転
+    return path
 
 def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
     global custum_vtree, name_prob_map, event_count, child_map
@@ -45,6 +98,7 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
     visited_event = set()
     elim_DAG = {}
     shared_basic_events = set()
+    first_parent = {}
 
     while queue:
         event = queue.popleft()
@@ -55,6 +109,7 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
                 if child_event[0] == '~':
                     child_event = child_event.removeprefix('~')
                 if child_event not in visited_event:
+                    first_parent[child_event] = event
                     queue.append(child_event)
                     order_event.append(child_event)
                     elim_DAG[event].append(child_event)
@@ -75,6 +130,7 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
 
     dp_bit = {}
     lca_map = {}
+    parents = {}
     for event in order_event:
         if event in gate_map:
             bit = 0
@@ -99,11 +155,15 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
                 for bit_val, shared_evt in rev_bit_map.items():
                     if (lca_bit & bit_val) > 0:
                         lca_map[shared_evt] = event
+                        if shared_evt not in parents:
+                            parents[shared_evt] = []
+                        parents[shared_evt].append(event)
     rev_lca_map = {}
     for basic, gate in lca_map.items():
         if gate not in rev_lca_map:
             rev_lca_map[gate] = []
         rev_lca_map[gate].append(basic)
+        parents[basic].reverse()
 
     print(rev_lca_map)
     child_num = {}
@@ -116,9 +176,15 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
 
             if event in rev_lca_map:
                 rev_lca_map[event].reverse()
+                """print(f"{event}:{rev_lca_map[event]}")
+                paths = []
+                for shared_evt in rev_lca_map[event]:
+                    path = extract_fast_path(event, shared_evt, first_parent)
+                    paths.append((shared_evt, path))
+                left = build_topological_subTree(paths)"""
                 left = build_balanced_subTree(rev_lca_map[event])
                 if len(valid_event) > 0:
-                    if gate_map[event].gate_type != "atleast":
+                    if gate_map[event].gate_type == "aleast":
                         right = build_balanced_subTree(valid_event)
                     else:
                         right = build_right_subTree(valid_event)
@@ -131,7 +197,7 @@ def lca_BFS_vtree(top_gate, var_map, gate_map, vtree_file):
                 child_num[event] = 1
                 
             elif len(valid_event) > 0:
-                if gate_map[event].gate_type != "atleast":
+                if gate_map[event].gate_type == "aleast":
                     v_map[event] = build_balanced_subTree(valid_event)
                 else:
                     v_map[event] = build_right_subTree(valid_event)
