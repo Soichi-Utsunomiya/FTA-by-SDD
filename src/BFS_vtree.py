@@ -70,9 +70,11 @@ def BFS_vtree(top_gate, var_map, gate_map):
             child_num[event] = 1
             custum_vtree.append("L " + str(event_count) + " " + str(var_map[event]))
             v_map[event] = event_count
+            #print(f"{event}:{var_map[event]}")
             event_count += 1
 
     lines = ["vtree " + str(event_count)] + custum_vtree
+    #print(lines)
     return "\n".join(lines).encode()
 
 
