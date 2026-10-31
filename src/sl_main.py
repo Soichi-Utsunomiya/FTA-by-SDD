@@ -1,6 +1,6 @@
 from dnf_to_sdd import run_sdd_from_pyeda_obj
 from explore import SDDEvaluator
-from BFS_vtree import BFS_vtree
+from sl_BFS_vtree import BFS_vtree
 from read_FT import read_FT
 import sys
 import time
@@ -11,7 +11,7 @@ def main():
     if len(sys.argv) > 1:
         xml_files = [Path(sys.argv[i]) for i in range(1, len(sys.argv))]
     else:
-        xml_files = [Path("FTA/aralia-fault-tree-dataset/data/openpsa/baobab1.xml")]
+        xml_files = [Path("FTA/baobab1.xml")]
         #xml_files = [Path("FTA/example3.xml")]
 
     start_time = time.perf_counter()
@@ -36,10 +36,10 @@ def main():
     print(f"Probability:{probability}")
     print(f"Nodes:{sdd_node.size()}")
     print(f"Time:{end_time - start_time}s\n")
-    with open("output/sdd.dot", "w") as out:
-        print(sdd_node.dot(), file = out)
-    with open("output/vtree.dot", "w") as out:
-        print(sdd_manager.vtree().dot(), file = out)
+    #with open("output/sdd.dot", "w") as out:
+    #    print(sdd_node.dot(), file = out)
+    #with open("output/vtree.dot", "w") as out:
+    #    print(sdd_manager.vtree().dot(), file = out)
 
 if __name__ == "__main__":
     main()
