@@ -55,7 +55,7 @@ def BFS_vtree(top_gate, var_map, gate_map):
         return basic_sum[event]
 
     Counter(top_gate)
-    print(basic_sum)
+    #print(basic_sum)
 
     queue = deque([top_gate])
     order_event = [top_gate]
@@ -81,6 +81,8 @@ def BFS_vtree(top_gate, var_map, gate_map):
                     order_event.append(child_event)
                     elim_DAG[event].append(child_event)
                     visited_event.add(child_event)
+
+    print(elim_DAG)
 
     child_num = {}
     for event in reversed(order_event):

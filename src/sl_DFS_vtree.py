@@ -55,7 +55,7 @@ def DFS_vtree(top_gate, var_map, gate_map):
         return basic_sum[event]
 
     Counter(top_gate)
-    print(basic_sum)
+    #print(basic_sum)
 
     queue = deque([top_gate])
     order_event = [top_gate]
@@ -72,9 +72,6 @@ def DFS_vtree(top_gate, var_map, gate_map):
                 child.removeprefix("~")
                 )
             )
-            print(sorted_children)
-            for child_event in sorted_children:
-                print(child_event,basic_sum[child_event])
             for child_event in sorted_children:
                 if child_event[0] == '~':
                     child_event = child_event.removeprefix('~')
@@ -87,6 +84,8 @@ def DFS_vtree(top_gate, var_map, gate_map):
     DFS(top_gate)
 
     child_num = {}
+    var_order = deque()
+
     for event in reversed(order_event):
         if event in elim_DAG:
             valid_event = []
@@ -102,9 +101,10 @@ def DFS_vtree(top_gate, var_map, gate_map):
             child_num[event] = 1
             custum_vtree.append("L " + str(event_count) + " " + str(var_map[event]))
             v_map[event] = event_count
-            #print(f"{event}:{var_map[event]}")
             event_count += 1
+            var_order.appendleft(event)
 
+    print(f"Order:{list(var_order)}")
     lines = ["vtree " + str(event_count)] + custum_vtree
     #print(lines)
     return "\n".join(lines).encode()
