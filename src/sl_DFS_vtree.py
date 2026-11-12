@@ -2,62 +2,74 @@ from collections import deque
 import tempfile
 import os
 
-v_map = {}
-child_map = {}
-name_prob_map = []
-custum_vtree = []
-event_count = 0
-
-def build_subTree(children):
-    global event_count, v_map, child_map
-
-    if len(children) == 1:
-        return v_map[children[0]]
-
-    mid = len(children) // 2
-    left = build_subTree(children[:mid])
-    right = build_subTree(children[mid:])
-
-    custum_vtree.append("I " + str(event_count) + " " + str(left) + " " + str(right))
-    event_count += 1
-    return event_count - 1
 
 def DFS_vtree(top_gate, var_map, gate_map):
-    """
-    FTのBFS走査に基づく平衡木vtreeを構築し、
-    PySDDが読み込めるバイト列として返す。
-    ファイルへの永続的な書き出しは行わない。
-    """
-    global custum_vtree, name_prob_map, event_count, child_map, v_map
+
+    global custum_vtree, event_count
     event_count = 0
     custum_vtree = []
-    name_prob_map = []
-    child_map = {}
     v_map = {}
 
-    queue = deque([top_gate])
     order_event = [top_gate]
     visited_event = set()
     elim_DAG = {}
-    basic_sum = {}
+    basic_parents = {}
+    gate_children = {}
+
+    def build_subTree(children):
+        global event_count
+
+        if len(children) == 1:
+            return v_map[children[0]]
+
+        mid = len(children) // 2
+        left = build_subTree(children[:mid])
+        right = build_subTree(children[mid:])
+
+        custum_vtree.append("I " + str(event_count) + " " + str(left) + " " + str(right))
+        event_count += 1
+        return event_count - 1
 
     def Counter(event):
-        if event in basic_sum:
-            return basic_sum[event]
-        elif event not in gate_map:
-            basic_sum[event] = 1
-            return basic_sum[event]
-        basic_sum[event] = 0
+        if event in gate_children:
+            return gate_children[event]
+        gate_children[event] = []
         for child_event in gate_map[event].children:
             if child_event[0] == '~':
                 child_event = child_event.removeprefix('~')
-            basic_sum[event] += Counter(child_event)
-        return basic_sum[event]
+            if child_event not in gate_map:
+                if child_event not in basic_parents:
+                    basic_parents[child_event] = []
+                basic_parents[child_event].append(event)
+                gate_children[event].append(child_event)
+            else:  
+                gate_children[event] += Counter(child_event)
+        return gate_children[event]
 
     Counter(top_gate)
-    #print(basic_sum)
+    print(basic_parents)
 
-    queue = deque([top_gate])
+    sorted_children = {}
+    for g,c in gate_map.items():
+        basic_events = list((set(c.children) & set(basic_parents)))
+        sorted_basic_events = sorted(
+            basic_events,
+            key = lambda child: (
+                -len(basic_parents[child.removeprefix("~")]),
+                child.removeprefix("~")
+            )
+        )
+        gate_events =list(set(c.children) - set(basic_events))
+        sorted_gate_events = sorted(
+            gate_events,
+            key = lambda child: (
+                len(gate_children[child.removeprefix("~")]),
+                child.removeprefix("~")
+            )   
+        )
+        sorted_children[g] = sorted_basic_events + sorted_gate_events
+        print(sorted_children[g])
+
     order_event = [top_gate]
     visited_event = set()
 
@@ -65,14 +77,7 @@ def DFS_vtree(top_gate, var_map, gate_map):
         visited_event.add(event)
         if event in gate_map:
             elim_DAG[event] = []
-            sorted_children = sorted(
-            gate_map[event].children,
-            key=lambda child: (
-                basic_sum[child.removeprefix("~")],
-                child.removeprefix("~")
-                )
-            )
-            for child_event in sorted_children:
+            for child_event in sorted_children[event]:
                 if child_event[0] == '~':
                     child_event = child_event.removeprefix('~')
                 if child_event not in visited_event:
