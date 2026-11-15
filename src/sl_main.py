@@ -25,8 +25,8 @@ def main():
 
     # vtreeをバイト列として生成（ファイルI/Oなし）
     #vtree_bytes = BFS_vtree(top_gate, var_map, gate_map)
-    vtree_bytes = DFS_vtree(top_gate, var_map, gate_map)
-    #vtree_bytes = hDFS_vtree(top_gate, var_map, gate_map)
+    #vtree_bytes = DFS_vtree(top_gate, var_map, gate_map)
+    vtree_bytes = hDFS_vtree(top_gate, var_map, gate_map)
 
     # vtree_bytesを一時ファイル経由でPySDDに渡し、直後に削除
     sdd_node, sdd_manager = run_sdd_from_pyeda_obj(

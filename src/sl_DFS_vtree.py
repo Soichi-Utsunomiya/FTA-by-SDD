@@ -47,7 +47,7 @@ def DFS_vtree(top_gate, var_map, gate_map):
         return gate_children[event]
 
     Counter(top_gate)
-    print(basic_parents)
+    #print(basic_parents)
 
     sorted_children = {}
     for g,c in gate_map.items():
@@ -68,7 +68,7 @@ def DFS_vtree(top_gate, var_map, gate_map):
             )   
         )
         sorted_children[g] = sorted_basic_events + sorted_gate_events
-        print(sorted_children[g])
+        #print(sorted_children[g])
 
     order_event = [top_gate]
     visited_event = set()
