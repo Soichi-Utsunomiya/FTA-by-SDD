@@ -2,16 +2,20 @@ from pysdd.sdd import SddManager, Vtree
 import os
 import csv
 import time
+import heapq
+from itertools import count
 
 
 class SDDBuilder:
     def __init__(
-        self, sdd_manager, var_map, gate_map,
+        self, sdd_manager, var_map, gate_map, gate_children, basic_parents,
         trace_writer=None, trace_writer_stream=None
     ):
         self.sdd_manager = sdd_manager
         self.var_map = var_map
         self.gate_map = gate_map
+        self.gate_children = gate_children
+        self.basic_parents = basic_parents
         self.cache = {}
 
         self.trace_writer = trace_writer
@@ -125,12 +129,24 @@ class SDDBuilder:
             )
             self.cache[event_name] = result_sdd
 
-            #self._record_status(event_name, "BASIC")
+            self._record_status(event_name, "BASIC")
 
             return ~result_sdd if is_not else result_sdd
 
         # ゲート（中間ノード）
         gate_node = self.gate_map[event_name]
+        print(gate_node.children)
+        """basic = []
+        gates = []
+        for child in gate_node.children:
+            if child in self.basic_parents:
+                basic.append(child)
+            else:
+                gates.append(child)
+        #basic.sort(key = lambda child:(-len(self.basic_parents[child])))
+        #gates.sort(key = lambda child :(-len(self.gate_children[child])))
+        #children = basic + gates
+        #print(children)"""
         child_sdds = [
             self.build_from_name(child)
             for child in gate_node.children
@@ -138,6 +154,10 @@ class SDDBuilder:
 
         if not child_sdds:
             return None
+
+        #print(child_sdds,[x.size() for x in child_sdds])
+        child_sdds.sort(key=lambda child: child.size())
+        #print(child_sdds,[x.size() for x in child_sdds])
 
         result_sdd = child_sdds[0]
         gate_type = gate_node.gate_type.upper()
@@ -195,8 +215,8 @@ class SDDBuilder:
 
 
 def run_sdd_from_pyeda_obj(
-    top_gate, var_map, gate_map, vtree_bytes,
-    trace_path="/workspace/sdd_trace.csv"
+    top_gate, var_map, gate_map, vtree_bytes, gate_children, basic_parents,
+    trace_path
 ):
     """
     vtree_bytes: BFS_vtree() が返すバイト列。
@@ -220,7 +240,7 @@ def run_sdd_from_pyeda_obj(
 
     if trace_path is None:
         sdd_builder = SDDBuilder(
-            sdd_manager, var_map, gate_map
+            sdd_manager, var_map, gate_map, gate_children, basic_parents
         )
 
         sdd_node = sdd_builder.build_from_name(top_gate)
@@ -248,6 +268,8 @@ def run_sdd_from_pyeda_obj(
                 sdd_manager,
                 var_map,
                 gate_map,
+                gate_children,
+                basic_parents,
                 trace_writer=writer,
                 trace_writer_stream=f
             )

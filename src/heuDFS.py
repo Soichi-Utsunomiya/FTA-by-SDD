@@ -16,7 +16,8 @@ def hDFS_vtree(top_gate, var_map, gate_map):
     basic_parents = {}
     gate_children = {}
 
-    def Counter(event):
+    """def Counter(event):
+        print(event)
         if event in gate_children:
             return gate_children[event]
         gate_children[event] = []
@@ -30,14 +31,37 @@ def hDFS_vtree(top_gate, var_map, gate_map):
                 gate_children[event].append(child_event)
             else:  
                 gate_children[event] += Counter(child_event)
+        return gate_children[event]"""
+
+    
+    def Counter(event):
+        if event in gate_children:
+            return gate_children[event]
+        gate_children[event] = 0
+        for child_event in gate_map[event].children:
+            if child_event[0] == '~':
+                child_event = child_event.removeprefix('~')
+            if child_event not in gate_map:
+                if child_event not in basic_parents:
+                    basic_parents[child_event] = []
+                basic_parents[child_event].append(event)
+                gate_children[event] += 1
+            else:  
+                gate_children[event] += Counter(child_event)
         return gate_children[event]
 
     Counter(top_gate)
-    #print(basic_parents)
+    print(basic_parents)
 
     sorted_children = {}
     for g,c in gate_map.items():
-        basic_events = list((set(c.children) & set(basic_parents)))
+
+        children = [
+            child.removeprefix("~")
+            for child in c.children
+        ]
+
+        basic_events = list((set(children) & set(basic_parents)))
         sorted_basic_events = sorted(
             basic_events,
             key = lambda child: (
@@ -45,16 +69,17 @@ def hDFS_vtree(top_gate, var_map, gate_map):
                 child.removeprefix("~")
             )
         )
-        gate_events =list(set(c.children) - set(basic_events))
+        gate_events =list(set(children) - set(basic_events))
         sorted_gate_events = sorted(
             gate_events,
             key = lambda child: (
-                len(gate_children[child.removeprefix("~")]),
+                #len(gate_children[child.removeprefix("~")]),
+                gate_children[child.removeprefix("~")],
                 child.removeprefix("~")
             )   
         )
         sorted_children[g] = sorted_basic_events + sorted_gate_events
-        print(sorted_children[g])
+        #print(sorted_children[g])
 
     order_event = [top_gate]
     visited_event = set()
@@ -128,7 +153,6 @@ def hDFS_vtree(top_gate, var_map, gate_map):
 
         if len(basics) > 0 and len(gates) > 0:
             left = build_basic_subTree(basics)
-            #left = build_right_subTree(basics)
             right = build_balanced_subTree(gates)
             custum_vtree.append("I " + str(event_count) + " " + str(left) + " " + str(right))
             event_count += 1
@@ -143,7 +167,7 @@ def hDFS_vtree(top_gate, var_map, gate_map):
 
     for event in reversed(order_event):
         if event in elim_DAG:
-            print(event,end=":")
+            #print(event,end=":")
             valid_basics = []
             valid_gates = []
             for child_event in elim_DAG[event]:
@@ -153,12 +177,12 @@ def hDFS_vtree(top_gate, var_map, gate_map):
                     else:
                         valid_gates.append(child_event)
             valid_event = valid_basics+valid_gates
-            print(valid_basics,valid_gates)
+            #print(gate_map[event].gate_type)
 
             if len(valid_event) > 0:
                 if shape == "balanced":
                     v_map[event] = build_balanced_subTree(valid_event)
-                elif shape == "right":
+                elif shape == "right" or gate_map[event].gate_type == "ATLEAST":
                     v_map[event] = build_right_subTree(valid_event)
                 else:
                     v_map[event] = build_subTree(valid_basics,valid_gates)
@@ -174,4 +198,4 @@ def hDFS_vtree(top_gate, var_map, gate_map):
 
     print(f"Order:{list(var_order)}")
     lines = ["vtree " + str(event_count)] + custum_vtree
-    return "\n".join(lines).encode()
+    return "\n".join(lines).encode(), gate_children, basic_parents
