@@ -8,7 +8,7 @@ from itertools import count
 
 class SDDBuilder:
     def __init__(
-        self, sdd_manager, var_map, gate_map, gate_children, basic_parents,
+        self, sdd_manager, var_map, gate_map, gate_children, basic_parents, ref_count,
         trace_writer=None, trace_writer_stream=None
     ):
         self.sdd_manager = sdd_manager
@@ -16,6 +16,7 @@ class SDDBuilder:
         self.gate_map = gate_map
         self.gate_children = gate_children
         self.basic_parents = basic_parents
+        self.ref_count = ref_count
         self.cache = {}
 
         self.trace_writer = trace_writer
@@ -109,6 +110,7 @@ class SDDBuilder:
 
     def build_from_name(self, event_name):
         is_not = False
+        GC = False
 
         if event_name[0] == '~':
             is_not = True
@@ -116,6 +118,7 @@ class SDDBuilder:
 
         # キャッシュのチェック
         if event_name in self.cache:
+            self.ref_count[event_name] -= 1
             result_sdd = self.cache[event_name]
             return ~result_sdd if is_not else result_sdd
 
@@ -127,7 +130,9 @@ class SDDBuilder:
             result_sdd = self.sdd_manager.literal(
                 self.var_map[event_name]
             )
+            result_sdd.ref()
             self.cache[event_name] = result_sdd
+            self.ref_count[event_name] -= 1
 
             self._record_status(event_name, "BASIC")
 
@@ -135,62 +140,90 @@ class SDDBuilder:
 
         # ゲート（中間ノード）
         gate_node = self.gate_map[event_name]
-        print(gate_node.children)
-        """basic = []
-        gates = []
-        for child in gate_node.children:
-            if child in self.basic_parents:
-                basic.append(child)
-            else:
-                gates.append(child)
-        #basic.sort(key = lambda child:(-len(self.basic_parents[child])))
-        #gates.sort(key = lambda child :(-len(self.gate_children[child])))
-        #children = basic + gates
-        #print(children)"""
-        child_sdds = [
-            self.build_from_name(child)
-            for child in gate_node.children
-        ]
 
-        if not child_sdds:
-            return None
-
-        #print(child_sdds,[x.size() for x in child_sdds])
-        child_sdds.sort(key=lambda child: child.size())
-        #print(child_sdds,[x.size() for x in child_sdds])
-
-        result_sdd = child_sdds[0]
         gate_type = gate_node.gate_type.upper()
 
         if gate_type == "AND":
-            for child_sdd in child_sdds[1:]:
-                result_sdd = result_sdd & child_sdd
+            result_sdd = None
 
+            for child in gate_node.children:
+                child_sdd = self.build_from_name(child)
+                if result_sdd is None:
+                    result_sdd = child_sdd
+                else:
+                    result_sdd = result_sdd & child_sdd
+
+                if self.ref_count[child.removeprefix('~')] == 0:
+                    child_sdd.deref()
+                    self.cache.pop(child.removeprefix('~'))
+                    if child.removeprefix('~') in self.gate_map:
+                        GC = True
+ 
         elif gate_type == "OR":
-            for child_sdd in child_sdds[1:]:
-                result_sdd = result_sdd | child_sdd
+            result_sdd = None
+
+            for child in gate_node.children:
+                child_sdd = self.build_from_name(child)
+
+                if result_sdd is None:
+                    result_sdd = child_sdd
+                else:
+                    result_sdd = result_sdd | child_sdd
+
+                if self.ref_count[child.removeprefix('~')] == 0:
+                    child_sdd.deref()
+                    self.cache.pop(child.removeprefix('~'))
+                    if child.removeprefix('~') in self.gate_map:
+                        GC = True
 
         elif gate_type == "NOT":
-            result_sdd = ~result_sdd
+            result_sdd = ~self.build_from_name(gate_node.children[0])
 
         elif gate_type == "NAND":
-            for child_sdd in child_sdds[1:]:
-                result_sdd = result_sdd & child_sdd
+            result_sdd = None
+
+            for child in gate_node.children:
+                child_sdd = self.build_from_name(child)
+
+                if result_sdd is None:
+                    result_sdd = child_sdd
+                else:
+                    result_sdd = result_sdd & child_sdd
+
+                if self.ref_count[child.removeprefix('~')] == 0:
+                    child_sdd.deref()
+                    self.cache.pop(child.removeprefix('~'))
+                    if child.removeprefix('~') in self.gate_map:
+                        GC = True
             result_sdd = ~result_sdd
 
         elif gate_type == "NOR":
-            for child_sdd in child_sdds[1:]:
-                result_sdd = result_sdd | child_sdd
+            result_sdd = None
+
+            for child in gate_node.children:
+                child_sdd = self.build_from_name(child)
+
+                if result_sdd is None:
+                    result_sdd = child_sdd
+                else:
+                    result_sdd = result_sdd & child_sdd
+
+                if self.ref_count[child.removeprefix('~')] == 0:
+                    child_sdd.deref()
+                    self.cache.pop(child.removeprefix('~'))
+                    if child.removeprefix('~') in self.gate_map:
+                        GC = True
             result_sdd = ~result_sdd
 
         elif gate_type == "XOR":
-            if len(child_sdds) != 2:
+            if len(gate_node.children) != 2:
                 raise ValueError(
                     f"XORゲート '{event_name}' には2つの子ノードが必要です"
-                    f"（現在 {len(child_sdds)} 個）。"
+                    f"（現在 {len(gate_node.children)} 個）。"
                 )
 
-            a, b = child_sdds
+            a = self.build_from_name(gate_node.children[0])
+            b = self.build_from_name(gate_node.children[1])
             result_sdd = (a & ~b) | (~a & b)
 
         elif gate_type == "ATLEAST":
@@ -198,7 +231,12 @@ class SDDBuilder:
                 raise ValueError(
                     f"ATLEASTゲート '{event_name}' に閾値 'k' が設定されていません。"
                 )
-
+            
+            child_sdds = [
+                        self.build_from_name(child)
+                        for child in gate_node.children
+                    ]
+            
             result_sdd = self._build_at_least(
                 gate_node.k, child_sdds
             )
@@ -206,8 +244,12 @@ class SDDBuilder:
         elif gate_type != "PASS":
             raise ValueError(f"Unknown gate type: {gate_type}")
 
+        result_sdd.ref()
+        self.ref_count[event_name] -= 1
         self.cache[event_name] = result_sdd
 
+        if GC:
+            self.sdd_manager.garbage_collect()
         # ゲートのSDD構築完了時に記録
         self._record_status(event_name, gate_type)
 
@@ -215,7 +257,7 @@ class SDDBuilder:
 
 
 def run_sdd_from_pyeda_obj(
-    top_gate, var_map, gate_map, vtree_bytes, gate_children, basic_parents,
+    top_gate, var_map, gate_map, vtree_bytes, gate_children, basic_parents, ref_count,
     trace_path
 ):
     """
@@ -240,7 +282,7 @@ def run_sdd_from_pyeda_obj(
 
     if trace_path is None:
         sdd_builder = SDDBuilder(
-            sdd_manager, var_map, gate_map, gate_children, basic_parents
+            sdd_manager, var_map, gate_map, gate_children, basic_parents, ref_count
         )
 
         sdd_node = sdd_builder.build_from_name(top_gate)
@@ -270,6 +312,7 @@ def run_sdd_from_pyeda_obj(
                 gate_map,
                 gate_children,
                 basic_parents,
+                ref_count,
                 trace_writer=writer,
                 trace_writer_stream=f
             )

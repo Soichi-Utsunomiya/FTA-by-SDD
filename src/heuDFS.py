@@ -1,6 +1,4 @@
 from collections import deque
-import tempfile
-import os
 
 
 def hDFS_vtree(top_gate, var_map, gate_map):
@@ -15,24 +13,7 @@ def hDFS_vtree(top_gate, var_map, gate_map):
     elim_DAG = {}
     basic_parents = {}
     gate_children = {}
-
-    """def Counter(event):
-        print(event)
-        if event in gate_children:
-            return gate_children[event]
-        gate_children[event] = []
-        for child_event in gate_map[event].children:
-            if child_event[0] == '~':
-                child_event = child_event.removeprefix('~')
-            if child_event not in gate_map:
-                if child_event not in basic_parents:
-                    basic_parents[child_event] = []
-                basic_parents[child_event].append(event)
-                gate_children[event].append(child_event)
-            else:  
-                gate_children[event] += Counter(child_event)
-        return gate_children[event]"""
-
+    ref_count = {}
     
     def Counter(event):
         if event in gate_children:
@@ -41,6 +22,7 @@ def hDFS_vtree(top_gate, var_map, gate_map):
         for child_event in gate_map[event].children:
             if child_event[0] == '~':
                 child_event = child_event.removeprefix('~')
+            ref_count[child_event] = ref_count.get(child_event, 0) + 1
             if child_event not in gate_map:
                 if child_event not in basic_parents:
                     basic_parents[child_event] = []
@@ -50,6 +32,7 @@ def hDFS_vtree(top_gate, var_map, gate_map):
                 gate_children[event] += Counter(child_event)
         return gate_children[event]
 
+    ref_count[top_gate] = 1
     Counter(top_gate)
     print(basic_parents)
 
@@ -198,4 +181,4 @@ def hDFS_vtree(top_gate, var_map, gate_map):
 
     print(f"Order:{list(var_order)}")
     lines = ["vtree " + str(event_count)] + custum_vtree
-    return "\n".join(lines).encode(), gate_children, basic_parents
+    return "\n".join(lines).encode(), gate_children, basic_parents, ref_count
